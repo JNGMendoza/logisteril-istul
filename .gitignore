@@ -1,0 +1,52 @@
+# Entorno virtual
+venv/
+env/
+.env
+.venv/
+
+# Base de datos local
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Distribución / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Variables de entorno
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos de sesión Flask
+flask_session/
+
+# Uploads (si se agrega subida de archivos)
+uploads/
+static/uploads/

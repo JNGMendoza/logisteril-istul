@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Ciclo {{ ciclo.numero_ciclo }} – LogiSteril{% endblock %}
+{% block page_title %}Detalle del Ciclo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h5 class="fw-bold">
+    {{ ciclo.numero_ciclo }}
+    <span class="badge bg-{{ ciclo.resultado_badge[0] }} ms-2">{{ ciclo.resultado_badge[1] }}</span>
+  </h5>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('ciclos.editar', id=ciclo.id) }}" class="btn btn-sm btn-outline-warning">
+      <i class="bi bi-pencil me-1"></i>Editar
+    </a>
+    <a href="{{ url_for('ciclos.index') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Parámetros del ciclo</div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <tr><td class="text-muted">Equipo</td><td class="fw-semibold">{{ ciclo.equipo.nombre if ciclo.equipo else '—' }}</td></tr>
+          <tr><td class="text-muted">Método</td><td>{{ ciclo.metodo_display }}</td></tr>
+          <tr><td class="text-muted">Temperatura</td><td>{{ ciclo.temperatura or '—' }} {{ '°C' if ciclo.temperatura }}</td></tr>
+          <tr><td class="text-muted">Presión</td><td>{{ ciclo.presion or '—' }} {{ 'kPa' if ciclo.presion }}</td></tr>
+          <tr><td class="text-muted">Tiempo</td><td>{{ ciclo.tiempo_minutos or '—' }} {{ 'min' if ciclo.tiempo_minutos }}</td></tr>
+          <tr><td class="text-muted">Lote</td><td>{{ ciclo.lote or '—' }}</td></tr>
+          <tr><td class="text-muted">Servicio destino</td><td>{{ ciclo.servicio_destino or '—' }}</td></tr>
+          <tr><td class="text-muted">Registrado por</td><td>{{ ciclo.registrado_por.nombre_completo if ciclo.registrado_por else '—' }}</td></tr>
+          <tr><td class="text-muted">Fecha inicio</td><td>{{ ciclo.fecha_inicio.strftime('%d/%m/%Y %H:%M') }}</td></tr>
+          <tr><td class="text-muted">Fecha fin</td><td>{{ ciclo.fecha_fin.strftime('%d/%m/%Y %H:%M') if ciclo.fecha_fin else 'En proceso' }}</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card mb-3">
+      <div class="card-header">Control de calidad</div>
+      <div class="card-body">
+        <div class="row text-center g-3">
+          <div class="col-6">
+            <div class="text-muted mb-1" style="font-size:.75rem">INDICADOR QUÍMICO</div>
+            <span class="badge bg-{{ ciclo.indicador_badge[0] }} px-3 py-2">
+              <i class="bi bi-{% if ciclo.indicador_quimico == 'aprobado' %}check-circle{% elif ciclo.indicador_quimico == 'rechazado' %}x-circle{% else %}clock{% endif %} me-1"></i>
+              {{ ciclo.indicador_badge[1] }}
+            </span>
+          </div>
+          <div class="col-6">
+            {% set bi_badges = {'aprobado':('success','Aprobado'),'rechazado':('danger','Rechazado'),'pendiente':('warning','Pendiente')} %}
+            {% set bi = bi_badges.get(ciclo.indicador_biologico, ('secondary','—')) %}
+            <div class="text-muted mb-1" style="font-size:.75rem">INDICADOR BIOLÓGICO</div>
+            <span class="badge bg-{{ bi[0] }} px-3 py-2">
+              <i class="bi bi-{% if ciclo.indicador_biologico == 'aprobado' %}check-circle{% elif ciclo.indicador_biologico == 'rechazado' %}x-circle{% else %}clock{% endif %} me-1"></i>
+              {{ bi[1] }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Material esterilizado</div>
+      <div class="card-body">
+        <p class="mb-0">{{ ciclo.contenido }}</p>
+      </div>
+    </div>
+    {% if ciclo.observaciones %}
+    <div class="card mt-3">
+      <div class="card-header">Observaciones</div>
+      <div class="card-body"><p class="mb-0">{{ ciclo.observaciones }}</p></div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

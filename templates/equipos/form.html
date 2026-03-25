@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if equipo else 'Nuevo' }} Equipo – LogiSteril{% endblock %}
+{% block page_title %}{{ 'Editar' if equipo else 'Nuevo' }} Equipo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-tools me-1"></i> {{ 'Editar equipo' if equipo else 'Registrar nuevo equipo' }}</div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold">Nombre del equipo *</label>
+              <input type="text" name="nombre" class="form-control" value="{{ equipo.nombre if equipo else '' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Tipo *</label>
+              <select name="tipo" class="form-select" required>
+                {% for t in tipos %}
+                <option value="{{ t }}" {{ 'selected' if equipo and equipo.tipo == t }}>{{ t }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Estado *</label>
+              <select name="estado" class="form-select">
+                {% for e in estados %}
+                <option value="{{ e }}" {{ 'selected' if equipo and equipo.estado == e }}>{{ e|replace('_',' ')|title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Marca</label>
+              <input type="text" name="marca" class="form-control" value="{{ equipo.marca if equipo else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Modelo</label>
+              <input type="text" name="modelo" class="form-control" value="{{ equipo.modelo if equipo else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">N° de serie</label>
+              <input type="text" name="numero_serie" class="form-control" value="{{ equipo.numero_serie if equipo else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Ubicación</label>
+              <input type="text" name="ubicacion" class="form-control" value="{{ equipo.ubicacion if equipo else '' }}" placeholder="Ej: Sala de esterilización 1">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Última calibración</label>
+              <input type="date" name="fecha_ultima_calibracion" class="form-control"
+                     value="{{ equipo.fecha_ultima_calibracion.strftime('%Y-%m-%d') if equipo and equipo.fecha_ultima_calibracion else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Próxima calibración</label>
+              <input type="date" name="fecha_proxima_calibracion" class="form-control"
+                     value="{{ equipo.fecha_proxima_calibracion.strftime('%Y-%m-%d') if equipo and equipo.fecha_proxima_calibracion else '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Observaciones</label>
+              <textarea name="observaciones" class="form-control" rows="2">{{ equipo.observaciones if equipo else '' }}</textarea>
+            </div>
+            <div class="col-12 d-flex gap-2 justify-content-end">
+              <a href="{{ url_for('equipos.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i> {{ 'Actualizar' if equipo else 'Registrar' }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

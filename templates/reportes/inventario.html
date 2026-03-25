@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Reporte Inventario – LogiSteril{% endblock %}
+{% block page_title %}Reporte de Inventario{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <p class="text-muted mb-0">Generado: {{ fecha.strftime('%d/%m/%Y %H:%M') }}</p>
+  <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-printer me-1"></i> Imprimir
+  </button>
+</div>
+
+{% if criticos %}
+<div class="alert alert-danger mb-3">
+  <strong><i class="bi bi-exclamation-triangle-fill me-1"></i> {{ criticos|length }} insumo(s) en nivel crítico o sin stock:</strong>
+  <ul class="mb-0 mt-1">
+  {% for i in criticos %}
+  <li>{{ i.nombre }} — Stock: {{ i.stock_actual }} {{ i.unidad }} (mín: {{ i.stock_minimo }})</li>
+  {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header fw-semibold">Inventario completo ({{ insumos|length }} ítems)</div>
+  <div class="card-body p-0">
+    <table class="table table-sm table-bordered mb-0">
+      <thead class="table-light">
+        <tr><th>#</th><th>Insumo</th><th>Categoría</th><th>Unidad</th><th>Stock actual</th><th>Mínimo</th><th>Máximo</th><th>Proveedor</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+      {% for i in insumos %}
+      <tr class="{{ 'table-danger' if i.estado_stock in ('critico','sin_stock') else 'table-warning' if i.estado_stock == 'bajo' }}">
+        <td>{{ loop.index }}</td>
+        <td>{{ i.nombre }}</td>
+        <td>{{ i.categoria }}</td>
+        <td>{{ i.unidad }}</td>
+        <td class="fw-bold">{{ i.stock_actual }}</td>
+        <td>{{ i.stock_minimo }}</td>
+        <td>{{ i.stock_maximo }}</td>
+        <td>{{ i.proveedor or '—' }}</td>
+        <td><span class="badge bg-{{ i.estado_badge[0] }}">{{ i.estado_badge[1] }}</span></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

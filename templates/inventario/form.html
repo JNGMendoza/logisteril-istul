@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if insumo else 'Nuevo' }} Insumo – LogiSteril{% endblock %}
+{% block page_title %}{{ 'Editar' if insumo else 'Nuevo' }} Insumo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-box me-1"></i> {{ 'Editar insumo' if insumo else 'Registrar nuevo insumo' }}
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold">Nombre del insumo *</label>
+              <input type="text" name="nombre" class="form-control"
+                     value="{{ insumo.nombre if insumo else '' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Categoría *</label>
+              <select name="categoria" class="form-select" required>
+                {% for cat in categorias %}
+                <option value="{{ cat }}" {{ 'selected' if insumo and insumo.categoria == cat }}>{{ cat }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Unidad de medida *</label>
+              <select name="unidad" class="form-select" required>
+                {% for u in unidades %}
+                <option value="{{ u }}" {{ 'selected' if insumo and insumo.unidad == u }}>{{ u }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% if not insumo %}
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Stock inicial</label>
+              <input type="number" step="0.01" name="stock_actual" class="form-control" value="0" min="0">
+            </div>
+            {% endif %}
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Stock mínimo *</label>
+              <input type="number" step="0.01" name="stock_minimo" class="form-control"
+                     value="{{ insumo.stock_minimo if insumo else 0 }}" min="0" required>
+              <div class="form-text">Umbral para alerta de reposición</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Stock máximo</label>
+              <input type="number" step="0.01" name="stock_maximo" class="form-control"
+                     value="{{ insumo.stock_maximo if insumo else 0 }}" min="0">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Proveedor</label>
+              <input type="text" name="proveedor" class="form-control"
+                     value="{{ insumo.proveedor if insumo else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Ubicación en bodega</label>
+              <input type="text" name="ubicacion" class="form-control"
+                     value="{{ insumo.ubicacion if insumo else '' }}" placeholder="Ej: Bodega A-1">
+            </div>
+            <div class="col-12 d-flex gap-2 justify-content-end pt-2">
+              <a href="{{ url_for('inventario.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i> {{ 'Actualizar' if insumo else 'Registrar' }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

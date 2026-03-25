@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: logisteril-istul
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true        # Render genera una clave aleatoria automáticamente
+      - key: FLASK_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: logisteril-db
+          property: connectionString
+
+databases:
+  - name: logisteril-db
+    databaseName: logisteril
+    user: logisteril_user
+    plan: free                     # Plan gratuito de PostgreSQL en Render

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block auth_content %}
+<div style="min-height:100vh; background: linear-gradient(135deg,#1a2035 0%,#0d47a1 100%);
+     display:flex; align-items:center; justify-content:center;">
+  <div class="card shadow-lg" style="width:100%;max-width:420px;border-radius:16px;">
+    <div class="card-body p-5">
+      <div class="text-center mb-4">
+        <div style="width:64px;height:64px;background:#e3f0ff;border-radius:50%;
+             display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+          <i class="bi bi-hospital" style="font-size:2rem;color:#0d6efd"></i>
+        </div>
+        <h4 class="fw-bold">LogiSteril</h4>
+        <p class="text-muted mb-0" style="font-size:.85rem">Central de Esterilización · ISTUL</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} py-2 mb-3">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Usuario</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input type="text" name="username" class="form-control" placeholder="nombre de usuario" required autofocus>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Contraseña</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input type="password" name="password" id="pwInput" class="form-control" placeholder="contraseña" required>
+            <button class="btn btn-outline-secondary" type="button"
+              onclick="let i=document.getElementById('pwInput');i.type=i.type==='password'?'text':'password'">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" name="remember" id="remember">
+          <label class="form-check-label text-muted" for="remember">Mantener sesión iniciada</label>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 fw-semibold">
+          <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
+        </button>
+      </form>
+
+      <hr class="my-4">
+      <div class="text-center text-muted" style="font-size:.75rem">
+        <strong>Cuentas de prueba:</strong><br>
+        admin / Admin1234! &nbsp;|&nbsp; supervisor / Super1234! &nbsp;|&nbsp; tecnico / Tecnico1234!
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

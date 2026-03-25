@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Reporte Ciclos – LogiSteril{% endblock %}
+{% block page_title %}Reporte de Ciclos de Esterilización{% endblock %}
+
+{% block content %}
+<form class="row g-2 align-items-end mb-3" method="GET">
+  <div class="col-md-3">
+    <label class="form-label form-label-sm">Desde</label>
+    <input type="date" name="desde" class="form-control form-control-sm" value="{{ desde }}">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label form-label-sm">Hasta</label>
+    <input type="date" name="hasta" class="form-control form-control-sm" value="{{ hasta }}">
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-primary btn-sm">
+      <i class="bi bi-search"></i> Filtrar
+    </button>
+  </div>
+  <div class="col-md-4 text-end">
+    <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-printer me-1"></i> Imprimir
+    </button>
+  </div>
+</form>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-3">
+      <div class="fw-bold fs-3">{{ total }}</div>
+      <div class="text-muted" style="font-size:.75rem">TOTAL CICLOS</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-3">
+      <div class="fw-bold fs-3 text-success">{{ aprobados }}</div>
+      <div class="text-muted" style="font-size:.75rem">APROBADOS</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-3">
+      <div class="fw-bold fs-3 text-danger">{{ rechazados }}</div>
+      <div class="text-muted" style="font-size:.75rem">RECHAZADOS</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-3">
+      <div class="fw-bold fs-3 {% if tasa_exito >= 95 %}text-success{% elif tasa_exito >= 80 %}text-warning{% else %}text-danger{% endif %}">
+        {{ tasa_exito }}%
+      </div>
+      <div class="text-muted" style="font-size:.75rem">TASA DE ÉXITO</div>
+    </div>
+  </div>
+</div>
+
+{% if por_metodo %}
+<div class="card mb-3">
+  <div class="card-header">Distribución por método</div>
+  <div class="card-body">
+    {% set metodos_display = {'vapor':'Vapor saturado','EO':'Óxido de etileno','plasma':'Plasma H₂O₂','calor_seco':'Calor seco'} %}
+    {% for metodo, cantidad in por_metodo.items() %}
+    <div class="d-flex align-items-center mb-2 gap-2">
+      <div style="width:160px;font-size:.85rem">{{ metodos_display.get(metodo, metodo) }}</div>
+      <div class="progress flex-fill" style="height:18px">
+        <div class="progress-bar bg-primary" style="width:{{ (cantidad/total*100)|round }}%">
+          {{ cantidad }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">Listado de ciclos ({{ ciclos|length }})</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered mb-0">
+        <thead class="table-light">
+          <tr><th>N° Ciclo</th><th>Equipo</th><th>Método</th><th>Servicio</th><th>Ind. Q.</th><th>Resultado</th><th>Fecha</th></tr>
+        </thead>
+        <tbody>
+        {% for c in ciclos %}
+        <tr>
+          <td>{{ c.numero_ciclo }}</td>
+          <td>{{ c.equipo.nombre if c.equipo else '—' }}</td>
+          <td>{{ metodos_display.get(c.metodo, c.metodo) }}</td>
+          <td>{{ c.servicio_destino or '—' }}</td>
+          <td><span class="badge bg-{{ c.indicador_badge[0] }}" style="font-size:.7rem">{{ c.indicador_badge[1] }}</span></td>
+          <td><span class="badge bg-{{ c.resultado_badge[0] }}" style="font-size:.7rem">{{ c.resultado_badge[1] }}</span></td>
+          <td>{{ c.fecha_inicio.strftime('%d/%m/%Y') }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

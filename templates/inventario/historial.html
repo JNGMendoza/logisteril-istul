@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Historial – {{ insumo.nombre }}{% endblock %}
+{% block page_title %}Historial de Movimientos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h6 class="fw-bold">{{ insumo.nombre }}
+    <span class="badge bg-{{ insumo.estado_badge[0] }} ms-2">{{ insumo.stock_actual }} {{ insumo.unidad }}</span>
+  </h6>
+  <a href="{{ url_for('inventario.index') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Volver
+  </a>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-light">
+        <tr><th>Fecha</th><th>Tipo</th><th>Cantidad</th><th>Stock antes</th><th>Stock después</th><th>Motivo</th><th>Usuario</th></tr>
+      </thead>
+      <tbody>
+      {% for m in insumo.movimientos %}
+      <tr>
+        <td>{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td><span class="badge bg-{{ m.tipo_badge }}">{{ m.tipo_display }}</span></td>
+        <td>{{ m.cantidad }} {{ insumo.unidad }}</td>
+        <td class="text-muted">{{ m.stock_antes }}</td>
+        <td class="fw-semibold">{{ m.stock_despues }}</td>
+        <td>{{ m.motivo or '—' }}</td>
+        <td>{{ m.usuario.nombre_completo if m.usuario else '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="text-center text-muted py-3">Sin movimientos registrados.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
