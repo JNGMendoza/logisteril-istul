@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if ciclo else 'Nuevo' }} Ciclo – LogiSteril{% endblock %}
+{% block page_title %}{{ 'Editar' if ciclo else 'Registrar' }} Ciclo de Esterilización{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-9">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-arrow-repeat me-1"></i> Datos del ciclo</div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Equipo *</label>
+              <select name="equipo_id" class="form-select" required>
+                <option value="">Seleccionar equipo...</option>
+                {% for eq in equipos %}
+                <option value="{{ eq.id }}" {{ 'selected' if ciclo and ciclo.equipo_id == eq.id }}>
+                  {{ eq.nombre }} ({{ eq.tipo }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Método de esterilización *</label>
+              <select name="metodo" class="form-select" required>
+                {% set metodos_display = {'vapor':'Vapor saturado (Autoclave)','EO':'Óxido de etileno','plasma':'Plasma H₂O₂','calor_seco':'Calor seco'} %}
+                {% for m in metodos %}
+                <option value="{{ m }}" {{ 'selected' if ciclo and ciclo.metodo == m }}>{{ metodos_display.get(m, m) }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Temperatura (°C)</label>
+              <input type="number" step="0.1" name="temperatura" class="form-control"
+                     value="{{ ciclo.temperatura if ciclo else '' }}" placeholder="134">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Presión (kPa)</label>
+              <input type="number" step="0.1" name="presion" class="form-control"
+                     value="{{ ciclo.presion if ciclo else '' }}" placeholder="206">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Tiempo (minutos)</label>
+              <input type="number" name="tiempo_minutos" class="form-control"
+                     value="{{ ciclo.tiempo_minutos if ciclo else '' }}" placeholder="18">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Contenido / Material esterilizado *</label>
+              <textarea name="contenido" class="form-control" rows="3" required
+                        placeholder="Describa el instrumental o material: bandeja de cirugía mayor, set de sutura, etc.">{{ ciclo.contenido if ciclo else '' }}</textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Servicio destino</label>
+              <select name="servicio_destino" class="form-select">
+                <option value="">Seleccionar...</option>
+                {% for s in servicios %}
+                <option value="{{ s }}" {{ 'selected' if ciclo and ciclo.servicio_destino == s }}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">N° de lote</label>
+              <input type="text" name="lote" class="form-control"
+                     value="{{ ciclo.lote if ciclo else '' }}" placeholder="L-2024-001">
+            </div>
+
+            <div class="col-12"><hr><h6 class="text-muted">Indicadores de control</h6></div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Indicador químico clase 5/6</label>
+              <select name="indicador_quimico" class="form-select">
+                <option value="pendiente" {{ 'selected' if not ciclo or ciclo.indicador_quimico == 'pendiente' }}>Pendiente</option>
+                <option value="aprobado" {{ 'selected' if ciclo and ciclo.indicador_quimico == 'aprobado' }}>Aprobado</option>
+                <option value="rechazado" {{ 'selected' if ciclo and ciclo.indicador_quimico == 'rechazado' }}>Rechazado</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Indicador biológico</label>
+              <select name="indicador_biologico" class="form-select">
+                <option value="pendiente" {{ 'selected' if not ciclo or ciclo.indicador_biologico == 'pendiente' }}>Pendiente</option>
+                <option value="aprobado" {{ 'selected' if ciclo and ciclo.indicador_biologico == 'aprobado' }}>Aprobado</option>
+                <option value="rechazado" {{ 'selected' if ciclo and ciclo.indicador_biologico == 'rechazado' }}>Rechazado</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Resultado del ciclo</label>
+              <select name="resultado" class="form-select">
+                <option value="en_proceso" {{ 'selected' if not ciclo or ciclo.resultado == 'en_proceso' }}>En proceso</option>
+                <option value="aprobado" {{ 'selected' if ciclo and ciclo.resultado == 'aprobado' }}>Aprobado</option>
+                <option value="rechazado" {{ 'selected' if ciclo and ciclo.resultado == 'rechazado' }}>Rechazado</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Observaciones</label>
+              <textarea name="observaciones" class="form-control" rows="2">{{ ciclo.observaciones if ciclo else '' }}</textarea>
+            </div>
+            <div class="col-12 d-flex gap-2 justify-content-end">
+              <a href="{{ url_for('ciclos.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i> {{ 'Actualizar' if ciclo else 'Registrar ciclo' }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

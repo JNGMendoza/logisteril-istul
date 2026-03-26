@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Movimiento de Inventario – LogiSteril{% endblock %}
+{% block page_title %}Registrar Movimiento{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="fw-bold">{{ insumo.nombre }}</h6>
+        <div class="row text-center">
+          <div class="col-4">
+            <div class="text-muted" style="font-size:.75rem">STOCK ACTUAL</div>
+            <div class="fw-bold fs-4 {% if insumo.estado_stock in ('critico','sin_stock') %}text-danger{% elif insumo.estado_stock == 'bajo' %}text-warning{% else %}text-success{% endif %}">
+              {{ insumo.stock_actual }}
+            </div>
+            <div class="text-muted" style="font-size:.8rem">{{ insumo.unidad }}</div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted" style="font-size:.75rem">MÍNIMO</div>
+            <div class="fw-bold fs-5">{{ insumo.stock_minimo }}</div>
+            <div class="text-muted" style="font-size:.8rem">{{ insumo.unidad }}</div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted" style="font-size:.75rem">ESTADO</div>
+            <span class="badge bg-{{ insumo.estado_badge[0] }} mt-1">{{ insumo.estado_badge[1] }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><i class="bi bi-arrow-left-right me-1"></i> Registrar movimiento</div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold">Tipo de movimiento *</label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="tipo" id="t1" value="entrada" checked>
+                <label class="btn btn-outline-success" for="t1"><i class="bi bi-plus-circle me-1"></i>Entrada</label>
+                <input type="radio" class="btn-check" name="tipo" id="t2" value="salida">
+                <label class="btn btn-outline-primary" for="t2"><i class="bi bi-dash-circle me-1"></i>Salida</label>
+                <input type="radio" class="btn-check" name="tipo" id="t3" value="ajuste">
+                <label class="btn btn-outline-warning" for="t3"><i class="bi bi-pencil-square me-1"></i>Ajuste</label>
+              </div>
+              <div class="form-text" id="tipoHelp">Entrada: incrementa el stock. Salida: reduce el stock. Ajuste: establece el stock exacto.</div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold" id="cantidadLabel">Cantidad *</label>
+              <div class="input-group">
+                <input type="number" step="0.01" name="cantidad" class="form-control form-control-lg"
+                       min="0.01" required placeholder="0">
+                <span class="input-group-text">{{ insumo.unidad }}</span>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Motivo / Referencia</label>
+              <input type="text" name="motivo" class="form-control"
+                     placeholder="Ej: Compra OC-2024-001, Consumo quirófano, etc.">
+            </div>
+            <div class="col-12 d-flex gap-2 justify-content-end">
+              <a href="{{ url_for('inventario.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i> Registrar movimiento
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('input[name="tipo"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const labels = {entrada:'Cantidad a ingresar', salida:'Cantidad a retirar', ajuste:'Nuevo stock total'};
+    document.getElementById('cantidadLabel').textContent = labels[r.value] + ' *';
+  });
+});
+</script>
+{% endblock %}

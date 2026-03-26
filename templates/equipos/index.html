@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Equipos – LogiSteril{% endblock %}
+{% block page_title %}Control de Equipos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <div></div>
+  <a href="{{ url_for('equipos.nuevo') }}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-1"></i> Nuevo equipo
+  </a>
+</div>
+
+{% if alertas_cal %}
+<div class="alert alert-warning d-flex align-items-center mb-3">
+  <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+  <div><strong>{{ alertas_cal|length }} equipo(s)</strong> con calibración vencida o próxima a vencer.</div>
+</div>
+{% endif %}
+
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form class="row g-2 align-items-end" method="GET">
+      <div class="col-md-4">
+        <select name="tipo" class="form-select form-select-sm">
+          <option value="">Todos los tipos</option>
+          {% for t in tipos %}
+          <option value="{{ t }}" {{ 'selected' if t == tipo_sel }}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="estado" class="form-select form-select-sm">
+          <option value="">Todos los estados</option>
+          {% for e in estados %}
+          <option value="{{ e }}" {{ 'selected' if e == estado_sel }}>{{ e|replace('_',' ')|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-search"></i> Filtrar</button>
+        <a href="{{ url_for('equipos.index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x"></i></a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3">
+{% for equipo in equipos %}
+<div class="col-md-6 col-lg-4">
+  <div class="card h-100">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h6 class="fw-bold mb-0">{{ equipo.nombre }}</h6>
+        <span class="badge bg-{{ equipo.estado_badge[0] }}">{{ equipo.estado_badge[1] }}</span>
+      </div>
+      <p class="text-muted mb-2" style="font-size:.8rem">
+        <i class="bi bi-tag me-1"></i>{{ equipo.tipo }}
+        {% if equipo.marca %} · {{ equipo.marca }}{% endif %}
+        {% if equipo.modelo %} {{ equipo.modelo }}{% endif %}
+      </p>
+      {% if equipo.ubicacion %}
+      <p class="mb-1" style="font-size:.8rem"><i class="bi bi-geo-alt me-1 text-muted"></i>{{ equipo.ubicacion }}</p>
+      {% endif %}
+      {% if equipo.fecha_proxima_calibracion %}
+      <p class="mb-2" style="font-size:.8rem">
+        <i class="bi bi-calendar-check me-1 text-muted"></i>
+        Calibración: 
+        <span class="{% if not equipo.calibracion_vigente %}text-danger fw-semibold{% elif equipo.dias_para_calibracion <= 15 %}text-warning fw-semibold{% else %}text-success{% endif %}">
+          {{ equipo.fecha_proxima_calibracion.strftime('%d/%m/%Y') }}
+          {% if equipo.dias_para_calibracion is not none %}
+            {% if equipo.dias_para_calibracion < 0 %}
+            (vencida hace {{ equipo.dias_para_calibracion|abs }} días)
+            {% elif equipo.dias_para_calibracion <= 15 %}
+            (en {{ equipo.dias_para_calibracion }} días)
+            {% endif %}
+          {% endif %}
+        </span>
+      </p>
+      {% endif %}
+      <div class="d-flex gap-1 mt-2">
+        <a href="{{ url_for('equipos.mantenimiento', id=equipo.id) }}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-wrench"></i> Mantenimiento
+        </a>
+        <a href="{{ url_for('equipos.editar', id=equipo.id) }}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-pencil"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="col-12 text-center text-muted py-5">No hay equipos registrados.</div>
+{% endfor %}
+</div>
+{% endblock %}

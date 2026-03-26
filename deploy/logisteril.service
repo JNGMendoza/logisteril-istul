@@ -1,0 +1,23 @@
+[Unit]
+Description=LogiSteril ISTUL - Central de Esterilizacion
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/logisteril
+Environment="PATH=/var/www/logisteril/venv/bin"
+EnvironmentFile=/var/www/logisteril/.env
+ExecStart=/var/www/logisteril/venv/bin/gunicorn \
+    --workers 2 \
+    --bind 127.0.0.1:5000 \
+    --timeout 120 \
+    --access-logfile /var/log/logisteril/access.log \
+    --error-logfile /var/log/logisteril/error.log \
+    "app:create_app()"
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

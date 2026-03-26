@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – LogiSteril{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- KPI cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="text-muted mb-1" style="font-size:.75rem">INSUMOS REGISTRADOS</p>
+            <h3 class="fw-bold mb-0">{{ total_insumos }}</h3>
+          </div>
+          <div class="rounded-circle bg-primary bg-opacity-10 p-2">
+            <i class="bi bi-boxes text-primary fs-5"></i>
+          </div>
+        </div>
+        {% if insumos_criticos > 0 %}
+        <div class="mt-2">
+          <span class="badge bg-danger">
+            <i class="bi bi-exclamation-triangle"></i> {{ insumos_criticos }} en stock crítico
+          </span>
+        </div>
+        {% else %}
+        <p class="text-success mb-0 mt-2" style="font-size:.8rem"><i class="bi bi-check-circle"></i> Todos en nivel normal</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="text-muted mb-1" style="font-size:.75rem">EQUIPOS ACTIVOS</p>
+            <h3 class="fw-bold mb-0">{{ total_equipos }}</h3>
+          </div>
+          <div class="rounded-circle bg-success bg-opacity-10 p-2">
+            <i class="bi bi-tools text-success fs-5"></i>
+          </div>
+        </div>
+        <p class="mb-0 mt-2" style="font-size:.8rem">
+          <span class="text-success">{{ equipos_op }} operativos</span>
+          {% if equipos_mant > 0 %}<span class="text-warning ms-2">{{ equipos_mant }} en mant.</span>{% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="text-muted mb-1" style="font-size:.75rem">CICLOS (30 DÍAS)</p>
+            <h3 class="fw-bold mb-0">{{ ciclos_mes }}</h3>
+          </div>
+          <div class="rounded-circle bg-info bg-opacity-10 p-2">
+            <i class="bi bi-arrow-repeat text-info fs-5"></i>
+          </div>
+        </div>
+        <p class="mb-0 mt-2" style="font-size:.8rem">
+          <span class="text-success">{{ ciclos_aprobados }} aprobados</span>
+          {% if ciclos_rechazados > 0 %}<span class="text-danger ms-2">{{ ciclos_rechazados }} rechazados</span>{% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="text-muted mb-1" style="font-size:.75rem">TASA DE ÉXITO</p>
+            <h3 class="fw-bold mb-0">{{ tasa_exito }}%</h3>
+          </div>
+          <div class="rounded-circle {% if tasa_exito >= 95 %}bg-success{% elif tasa_exito >= 80 %}bg-warning{% else %}bg-danger{% endif %} bg-opacity-10 p-2">
+            <i class="bi bi-graph-up {% if tasa_exito >= 95 %}text-success{% elif tasa_exito >= 80 %}text-warning{% else %}text-danger{% endif %} fs-5"></i>
+          </div>
+        </div>
+        <div class="progress mt-2" style="height:4px">
+          <div class="progress-bar {% if tasa_exito >= 95 %}bg-success{% elif tasa_exito >= 80 %}bg-warning{% else %}bg-danger{% endif %}"
+               style="width:{{ tasa_exito }}%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <!-- Alertas stock crítico -->
+  <div class="col-12 col-md-5">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> Alertas de Stock</span>
+        {% if current_user.tiene_permiso('inventario') %}
+        <a href="{{ url_for('inventario.index') }}?estado=critico" class="btn btn-sm btn-outline-danger">Ver todos</a>
+        {% endif %}
+      </div>
+      <div class="card-body p-0">
+        {% if alertas_stock %}
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light"><tr><th>Insumo</th><th>Stock</th><th>Mín.</th></tr></thead>
+          <tbody>
+          {% for insumo in alertas_stock %}
+          <tr>
+            <td>{{ insumo.nombre[:40] }}</td>
+            <td>
+              <span class="badge bg-{{ insumo.estado_badge[0] }}">
+                {{ insumo.stock_actual }} {{ insumo.unidad }}
+              </span>
+            </td>
+            <td class="text-muted">{{ insumo.stock_minimo }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-4 text-success">
+          <i class="bi bi-check-circle-fill fs-3"></i>
+          <p class="mt-2 mb-0">Sin alertas de stock</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <!-- Gráfico ciclos por método -->
+  <div class="col-12 col-md-7">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-pie-chart me-1"></i> Ciclos por método (últimos 30 días)</div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        {% if ciclos_por_metodo %}
+        <canvas id="chartMetodo" style="max-height:200px"></canvas>
+        {% else %}
+        <p class="text-muted">Sin datos de ciclos en los últimos 30 días.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Últimos ciclos -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clock-history me-1"></i> Últimos ciclos registrados</span>
+    {% if current_user.tiene_permiso('ciclos') %}
+    <a href="{{ url_for('ciclos.index') }}" class="btn btn-sm btn-outline-primary">Ver todos</a>
+    {% endif %}
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>N° Ciclo</th><th>Equipo</th><th>Método</th><th>Servicio</th>
+            <th>Indicador Q.</th><th>Resultado</th><th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for c in ultimos_ciclos %}
+        <tr>
+          <td><a href="{{ url_for('ciclos.ver', id=c.id) }}" class="fw-semibold">{{ c.numero_ciclo }}</a></td>
+          <td>{{ c.equipo.nombre[:25] }}</td>
+          <td>{{ c.metodo_display[:20] }}</td>
+          <td>{{ c.servicio_destino or '—' }}</td>
+          <td><span class="badge bg-{{ c.indicador_badge[0] }}">{{ c.indicador_badge[1] }}</span></td>
+          <td><span class="badge bg-{{ c.resultado_badge[0] }}">{{ c.resultado_badge[1] }}</span></td>
+          <td class="text-muted">{{ c.fecha_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-3">No hay ciclos registrados aún.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if ciclos_por_metodo %}
+const labels = {{ ciclos_por_metodo | map(attribute=0) | list | tojson }};
+const data   = {{ ciclos_por_metodo | map(attribute=1) | list | tojson }};
+const metodoDisplay = {'vapor':'Vapor','EO':'Óxido Etileno','plasma':'Plasma','calor_seco':'Calor seco'};
+new Chart(document.getElementById('chartMetodo'), {
+  type: 'doughnut',
+  data: {
+    labels: labels.map(l => metodoDisplay[l] || l),
+    datasets: [{ data, backgroundColor: ['#0d6efd','#198754','#ffc107','#dc3545'] }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'right' } } }
+});
+{% endif %}
+</script>
+{% endblock %}

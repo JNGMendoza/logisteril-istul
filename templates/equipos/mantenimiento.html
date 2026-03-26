@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Registrar Mantenimiento – LogiSteril{% endblock %}
+{% block page_title %}Registrar Mantenimiento{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="alert alert-info py-2 mb-3">
+      <strong><i class="bi bi-tools me-1"></i>{{ equipo.nombre }}</strong>
+      <span class="ms-2 badge bg-{{ equipo.estado_badge[0] }}">{{ equipo.estado_badge[1] }}</span>
+    </div>
+    <div class="card">
+      <div class="card-header">Nuevo registro de mantenimiento</div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Tipo *</label>
+              <select name="tipo" class="form-select" required>
+                <option value="preventivo">Preventivo</option>
+                <option value="correctivo">Correctivo</option>
+                <option value="calibracion">Calibración</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Fecha *</label>
+              <input type="date" name="fecha" class="form-control" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Descripción *</label>
+              <textarea name="descripcion" class="form-control" rows="3" required
+                        placeholder="Descripción del trabajo realizado..."></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Técnico responsable</label>
+              <input type="text" name="tecnico_responsable" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Costo (USD)</label>
+              <input type="number" step="0.01" name="costo" class="form-control" min="0" value="0">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Próximo mantenimiento / calibración</label>
+              <input type="date" name="proximo_mantenimiento" class="form-control">
+            </div>
+            <div class="col-12 d-flex gap-2 justify-content-end">
+              <a href="{{ url_for('equipos.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i> Registrar
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if equipo.mantenimientos %}
+    <div class="card mt-3">
+      <div class="card-header">Historial de mantenimientos</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Técnico</th></tr></thead>
+          <tbody>
+          {% for m in equipo.mantenimientos[:5] %}
+          <tr>
+            <td>{{ m.fecha.strftime('%d/%m/%Y') }}</td>
+            <td><span class="badge bg-{{ m.tipo_badge }}">{{ m.tipo_display }}</span></td>
+            <td>{{ m.descripcion[:60] }}{% if m.descripcion|length > 60 %}…{% endif %}</td>
+            <td>{{ m.tecnico_responsable or '—' }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
