@@ -48,8 +48,8 @@ def create_app():
 
     register_context_processors(app)
 
-    with app.app_context():
-        init_db()
+    #with app.app_context():
+    #    init_db()
 
     return app
 
