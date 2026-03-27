@@ -57,12 +57,6 @@
           <a href="{{ url_for('usuarios.editar', id=u.id) }}" class="btn btn-sm btn-outline-warning">
             <i class="bi bi-pencil"></i>
           </a>
-          {% if u.rol == 'estudiante' %}
-          <a href="{{ url_for('qr.qr_estudiante', usuario_id=u.id) }}"
-             class="btn btn-sm btn-outline-info" title="Ver QR del estudiante">
-            <i class="bi bi-qr-code"></i>
-          </a>
-          {% endif %}
           <form method="POST" action="{{ url_for('usuarios.desactivar', id=u.id) }}"
                 class="d-inline" onsubmit="return confirm('¿Confirmar cambio de estado?')">
             <button type="submit" class="btn btn-sm btn-outline-{{ 'secondary' if u.activo else 'success' }}">
