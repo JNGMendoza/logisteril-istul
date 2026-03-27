@@ -122,11 +122,11 @@
     {% endif %}
 
 
-    {% if current_user.tiene_permiso('usuarios') or current_user.rol in ('tecnico','supervisor') %}
+    {% if current_user.rol in ('admin','supervisor','tecnico') %}
     <div class="nav-section">Códigos QR</div>
-    <a href="{{ url_for('qr.todos_qr_estudiantes') }}"
-       class="nav-link {% if 'todos_qr' in request.endpoint %}active{% endif %}">
-      <i class="bi bi-qr-code"></i> QR estudiantes
+    <a href="{{ url_for('qr.qr_retiro') }}"
+       class="nav-link {% if request.endpoint == 'qr.qr_retiro' %}active{% endif %}">
+      <i class="bi bi-qr-code"></i> QR retiro de insumos
     </a>
     <a href="{{ url_for('qr.qr_stock') }}"
        class="nav-link {% if request.endpoint == 'qr.qr_stock' %}active{% endif %}">

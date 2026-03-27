@@ -54,12 +54,6 @@ def create_app():
     # with app.app_context():
     #     init_db()
 
-    @app.route("/init-db")
-    def init_db_route():
-        with app.app_context():
-            init_db()
-        return "Database initialized successfully"
-        
     return app
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, jsonify, abort, make_response
+from flask import Blueprint, render_template, redirect, url_for, request, jsonify, abort
 from flask_login import login_required, current_user
 from models.database import db
 from models.usuario import Usuario
@@ -10,181 +10,157 @@ import hmac, hashlib, os
 
 qr_bp = Blueprint('qr', __name__, url_prefix='/qr')
 
-# ──────────────────────────────────────────────
-# FIRMA SEGURA para tokens de QR
-# ──────────────────────────────────────────────
-
+# ── Token seguro para el QR de stock ──────────────────────────────────────────
 def _firma(payload: str) -> str:
     secret = os.environ.get('SECRET_KEY', 'logisteril-istul-2024-secretkey')
     return hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()[:16]
 
-def _token_estudiante(usuario_id: int) -> str:
-    payload = f"est:{usuario_id}"
-    return f"{payload}:{_firma(payload)}"
-
-def _token_admin_stock() -> str:
+def _token_stock() -> str:
     payload = "stock:admin"
     return f"{payload}:{_firma(payload)}"
 
-def _verificar_token(token: str) -> str | None:
-    """Devuelve el payload si el token es válido, None si no."""
+def _verificar_token_stock(token: str) -> bool:
     parts = token.rsplit(':', 1)
     if len(parts) != 2:
-        return None
+        return False
     payload, firma = parts
-    if hmac.compare_digest(_firma(payload), firma):
-        return payload
-    return None
+    return hmac.compare_digest(_firma(payload), firma) and payload == "stock:admin"
 
 
-# ──────────────────────────────────────────────
-# GENERAR QR ESTUDIANTE
-# ──────────────────────────────────────────────
+# ── QR ÚNICO DE RETIRO (para imprimir y pegar en la central) ──────────────────
 
-@qr_bp.route('/estudiante/<int:usuario_id>')
+@qr_bp.route('/retiro')
 @login_required
-def qr_estudiante(usuario_id):
-    """Solo admin puede ver el QR de cualquier estudiante.
-       El propio estudiante puede ver el suyo."""
-    if current_user.id != usuario_id and current_user.rol not in ('admin', 'supervisor'):
-        abort(403)
-
-    usuario = Usuario.query.get_or_404(usuario_id)
-    if not usuario.es_estudiante:
-        abort(404)
-
-    token = _token_estudiante(usuario_id)
-    url_scan = url_for('qr.scan_estudiante', token=token, _external=True)
-    qr_b64   = generar_qr_base64(url_scan, size=8)
-
-    return render_template('qr/qr_estudiante.html',
-        usuario=usuario, qr_b64=qr_b64, url_scan=url_scan)
-
-
-@qr_bp.route('/todos-estudiantes')
-@login_required
-def todos_qr_estudiantes():
-    """Admin: página con los QR de TODOS los estudiantes para imprimir."""
+def qr_retiro():
+    """Admin/técnico genera el QR único del sistema para retiro de insumos."""
     if current_user.rol not in ('admin', 'supervisor', 'tecnico'):
         abort(403)
-
-    estudiantes = Usuario.query.filter_by(rol='estudiante', activo=True)\
-                               .order_by(Usuario.apellido).all()
-    qrs = []
-    for est in estudiantes:
-        token    = _token_estudiante(est.id)
-        url_scan = url_for('qr.scan_estudiante', token=token, _external=True)
-        qr_b64   = generar_qr_base64(url_scan, size=5)
-        qrs.append({'usuario': est, 'qr_b64': qr_b64, 'url': url_scan})
-
-    return render_template('qr/todos_qr.html', qrs=qrs)
+    url_scan = url_for('qr.scan_retiro', _external=True)
+    qr_b64   = generar_qr_base64(url_scan, size=10)
+    return render_template('qr/qr_retiro_unico.html', qr_b64=qr_b64, url_scan=url_scan)
 
 
-# ──────────────────────────────────────────────
-# GENERAR QR STOCK (para admin)
-# ──────────────────────────────────────────────
+# ── PASO 1 — El estudiante escanea: ingresa su cédula ─────────────────────────
 
-@qr_bp.route('/stock')
-@login_required
-def qr_stock():
-    """Genera el QR que da acceso rápido al stock — para admin/supervisor."""
-    if current_user.rol not in ('admin', 'supervisor', 'tecnico'):
-        abort(403)
+@qr_bp.route('/retiro/inicio', methods=['GET', 'POST'])
+def scan_retiro():
+    """Página pública. El estudiante ingresa su cédula para identificarse."""
+    error = None
 
-    token    = _token_admin_stock()
-    url_scan = url_for('qr.scan_stock', token=token, _external=True)
-    qr_b64   = generar_qr_base64(url_scan, size=8)
+    if request.method == 'POST':
+        cedula = request.form.get('cedula', '').strip()
 
-    return render_template('qr/qr_stock.html',
-        qr_b64=qr_b64, url_scan=url_scan)
+        if not cedula:
+            error = 'Ingresa tu número de cédula.'
+        else:
+            # Buscar por cédula o código de estudiante
+            estudiante = Usuario.query.filter(
+                Usuario.rol == 'estudiante',
+                Usuario.activo == True,
+                (Usuario.cedula == cedula) | (Usuario.codigo_estudiante == cedula)
+            ).first()
+
+            if not estudiante:
+                error = f'No se encontró ningún estudiante con la cédula o código "{cedula}". Verifica el número o contacta al técnico.'
+            else:
+                # Redirigir al formulario con el ID del estudiante en sesión de URL
+                return redirect(url_for('qr.formulario_retiro', estudiante_id=estudiante.id))
+
+    return render_template('qr/cedula_inicio.html', error=error)
 
 
-# ──────────────────────────────────────────────
-# SCAN QR ESTUDIANTE → formulario de retiro
-# ──────────────────────────────────────────────
+# ── PASO 2 — Formulario de retiro identificado ────────────────────────────────
 
-@qr_bp.route('/retiro/<token>', methods=['GET', 'POST'])
-def scan_estudiante(token):
-    """
-    Página pública que abre el formulario de retiro de insumos.
-    Accesible sin login (el token identifica al estudiante).
-    """
-    payload = _verificar_token(token)
-    if not payload or not payload.startswith('est:'):
-        return render_template('qr/qr_invalido.html'), 403
-
-    usuario_id = int(payload.split(':')[1])
-    estudiante = Usuario.query.get_or_404(usuario_id)
-
-    if not estudiante.activo or not estudiante.es_estudiante:
-        return render_template('qr/qr_invalido.html'), 403
+@qr_bp.route('/retiro/formulario/<int:estudiante_id>', methods=['GET', 'POST'])
+def formulario_retiro(estudiante_id):
+    """Formulario de retiro ya identificado con el estudiante."""
+    estudiante = Usuario.query.filter_by(
+        id=estudiante_id, rol='estudiante', activo=True
+    ).first_or_404()
 
     insumos = Insumo.query.filter_by(activo=True)\
                           .filter(Insumo.stock_actual > 0)\
                           .order_by(Insumo.nombre).all()
+    error = None
 
     if request.method == 'POST':
-        insumo_id = int(request.form['insumo_id'])
-        cantidad  = float(request.form['cantidad'])
-        insumo    = Insumo.query.get_or_404(insumo_id)
+        insumo_id = request.form.get('insumo_id', '')
+        cantidad_str = request.form.get('cantidad', '')
+        area = request.form.get('area_practica', '')
+        motivo = request.form.get('motivo', '').strip()
 
-        if cantidad > insumo.stock_actual:
-            error = f'Stock insuficiente. Disponible: {insumo.stock_actual} {insumo.unidad}'
-            return render_template('qr/formulario_retiro.html',
-                                   estudiante=estudiante, insumos=insumos,
-                                   areas=AREAS_PRACTICA, token=token, error=error)
+        # Validaciones
+        if not insumo_id or not cantidad_str or not area or not motivo:
+            error = 'Todos los campos son obligatorios.'
+        else:
+            cantidad = float(cantidad_str)
+            insumo   = Insumo.query.get_or_404(int(insumo_id))
 
-        # Buscar técnico de guardia (el primero activo con rol técnico)
-        tecnico = Usuario.query.filter_by(rol='tecnico', activo=True).first()
-        if not tecnico:
-            tecnico = Usuario.query.filter_by(rol='admin', activo=True).first()
+            if cantidad <= 0:
+                error = 'La cantidad debe ser mayor a cero.'
+            elif cantidad > insumo.stock_actual:
+                error = f'Stock insuficiente. Disponible: {insumo.stock_actual} {insumo.unidad}'
 
-        stock_antes = insumo.stock_actual
-        insumo.stock_actual -= cantidad
+        if not error:
+            # Buscar técnico activo para asignar la entrega
+            tecnico = Usuario.query.filter(
+                Usuario.rol.in_(['tecnico', 'admin']),
+                Usuario.activo == True
+            ).first()
 
-        adq = Adquisicion(
-            estudiante_id = estudiante.id,
-            area_practica = request.form['area_practica'],
-            insumo_id     = insumo_id,
-            cantidad      = cantidad,
-            motivo        = request.form['motivo'],
-            tecnico_id    = tecnico.id,
-            observaciones = 'Registro vía código QR',
-        )
-        mov = MovimientoInventario(
-            insumo_id     = insumo_id,
-            usuario_id    = tecnico.id,
-            tipo          = 'salida',
-            cantidad      = cantidad,
-            stock_antes   = stock_antes,
-            stock_despues = insumo.stock_actual,
-            motivo        = f'QR — {estudiante.nombre_completo} — {adq.motivo}',
-        )
-        db.session.add(adq)
-        db.session.add(mov)
-        db.session.commit()
+            stock_antes = insumo.stock_actual
+            insumo.stock_actual -= cantidad
 
-        return render_template('qr/retiro_exitoso.html',
-                               estudiante=estudiante, adq=adq, insumo=insumo)
+            adq = Adquisicion(
+                estudiante_id = estudiante.id,
+                area_practica = area,
+                insumo_id     = int(insumo_id),
+                cantidad      = cantidad,
+                motivo        = motivo,
+                tecnico_id    = tecnico.id,
+                observaciones = 'Registro vía código QR del sistema',
+            )
+            mov = MovimientoInventario(
+                insumo_id     = int(insumo_id),
+                usuario_id    = tecnico.id,
+                tipo          = 'salida',
+                cantidad      = cantidad,
+                stock_antes   = stock_antes,
+                stock_despues = insumo.stock_actual,
+                motivo        = f'QR — {estudiante.nombre_completo} — {motivo}',
+            )
+            db.session.add(adq)
+            db.session.add(mov)
+            db.session.commit()
+
+            return render_template('qr/retiro_exitoso.html',
+                                   estudiante=estudiante, adq=adq, insumo=insumo)
 
     return render_template('qr/formulario_retiro.html',
                            estudiante=estudiante, insumos=insumos,
-                           areas=AREAS_PRACTICA, token=token, error=None)
+                           areas=AREAS_PRACTICA, error=error)
 
 
-# ──────────────────────────────────────────────
-# SCAN QR STOCK → vista rápida de stock
-# ──────────────────────────────────────────────
+# ── QR STOCK (para admin/supervisor) ─────────────────────────────────────────
+
+@qr_bp.route('/stock')
+@login_required
+def qr_stock():
+    if current_user.rol not in ('admin', 'supervisor', 'tecnico'):
+        abort(403)
+    token    = _token_stock()
+    url_scan = url_for('qr.scan_stock', token=token, _external=True)
+    qr_b64   = generar_qr_base64(url_scan, size=8)
+    return render_template('qr/qr_stock.html', qr_b64=qr_b64, url_scan=url_scan)
+
 
 @qr_bp.route('/ver-stock/<token>')
 def scan_stock(token):
-    """Vista pública de stock — acceso por QR seguro."""
-    payload = _verificar_token(token)
-    if not payload or payload != 'stock:admin':
+    if not _verificar_token_stock(token):
         return render_template('qr/qr_invalido.html'), 403
-
-    insumos = Insumo.query.filter_by(activo=True).order_by(Insumo.nombre).all()
+    from datetime import datetime
+    insumos  = Insumo.query.filter_by(activo=True).order_by(Insumo.nombre).all()
     criticos = [i for i in insumos if i.estado_stock in ('critico', 'sin_stock')]
-
     return render_template('qr/stock_rapido.html',
-                           insumos=insumos, criticos=criticos)
+                           insumos=insumos, criticos=criticos,
+                           now=datetime.now())
