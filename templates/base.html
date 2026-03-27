@@ -12,7 +12,7 @@
     .sidebar {
       position: fixed; top: 0; left: 0; height: 100vh;
       width: var(--sidebar-w); background: #1a2035; color: #c8d0e0;
-      display: flex; flex-direction: column; z-index: 1000; transition: transform .3s;
+      display: flex; flex-direction: column; z-index: 1000;
     }
     .sidebar-brand {
       padding: 1.25rem 1.5rem; border-bottom: 1px solid #2d3a56;
@@ -41,7 +41,6 @@
     .page-content { padding: 1.5rem; }
     .card { border: 1px solid #e8eaf0; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
     .card-header { background: #fff; border-bottom: 1px solid #e8eaf0; font-weight: 600; }
-    .badge-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
     @media (max-width: 768px) {
       .sidebar { transform: translateX(-100%); }
       .sidebar.show { transform: translateX(0); }
@@ -53,18 +52,40 @@
 <body>
 
 {% if current_user.is_authenticated %}
-<!-- Sidebar -->
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <i class="bi bi-hospital me-2" style="color:#0d6efd"></i>LogiSteril
     <small>Central de Esterilización · ISTUL</small>
   </div>
   <div class="sidebar-nav">
+
+    {% if not current_user.es_estudiante %}
     <div class="nav-section">Principal</div>
     <a href="{{ url_for('dashboard.index') }}"
        class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
       <i class="bi bi-speedometer2"></i> Dashboard
     </a>
+    {% endif %}
+
+    {% if current_user.es_estudiante %}
+    <div class="nav-section">Mis insumos</div>
+    <a href="{{ url_for('adquisiciones.mis_solicitudes') }}"
+       class="nav-link {% if 'mis_solicitudes' in request.endpoint %}active{% endif %}">
+      <i class="bi bi-bag-check"></i> Mis retiros
+    </a>
+    {% endif %}
+
+    {% if current_user.tiene_permiso('adquisiciones') %}
+    <div class="nav-section">Entregas</div>
+    <a href="{{ url_for('adquisiciones.nueva') }}"
+       class="nav-link {% if request.endpoint == 'adquisiciones.nueva' %}active{% endif %}">
+      <i class="bi bi-plus-circle"></i> Registrar entrega
+    </a>
+    <a href="{{ url_for('adquisiciones.index') }}"
+       class="nav-link {% if request.endpoint == 'adquisiciones.index' %}active{% endif %}">
+      <i class="bi bi-bag-check"></i> Historial de entregas
+    </a>
+    {% endif %}
 
     {% if current_user.tiene_permiso('inventario') %}
     <div class="nav-section">Gestión</div>
@@ -84,15 +105,32 @@
     {% if current_user.tiene_permiso('ciclos') %}
     <a href="{{ url_for('ciclos.index') }}"
        class="nav-link {% if 'ciclos' in request.endpoint %}active{% endif %}">
-      <i class="bi bi-arrow-repeat"></i> Ciclos de Esterilización
+      <i class="bi bi-arrow-repeat"></i> Ciclos de esterilización
     </a>
     {% endif %}
 
     {% if current_user.tiene_permiso('reportes') %}
     <div class="nav-section">Análisis</div>
     <a href="{{ url_for('reportes.index') }}"
-       class="nav-link {% if 'reportes' in request.endpoint %}active{% endif %}">
+       class="nav-link {% if request.endpoint == 'reportes.index' %}active{% endif %}">
       <i class="bi bi-bar-chart-line"></i> Reportes
+    </a>
+    <a href="{{ url_for('adquisiciones.reporte') }}"
+       class="nav-link {% if request.endpoint == 'adquisiciones.reporte' %}active{% endif %}">
+      <i class="bi bi-file-earmark-bar-graph"></i> Reporte de entregas
+    </a>
+    {% endif %}
+
+
+    {% if current_user.tiene_permiso('usuarios') or current_user.rol in ('tecnico','supervisor') %}
+    <div class="nav-section">Códigos QR</div>
+    <a href="{{ url_for('qr.todos_qr_estudiantes') }}"
+       class="nav-link {% if 'todos_qr' in request.endpoint %}active{% endif %}">
+      <i class="bi bi-qr-code"></i> QR estudiantes
+    </a>
+    <a href="{{ url_for('qr.qr_stock') }}"
+       class="nav-link {% if request.endpoint == 'qr.qr_stock' %}active{% endif %}">
+      <i class="bi bi-qr-code-scan"></i> QR stock
     </a>
     {% endif %}
 
@@ -103,6 +141,7 @@
       <i class="bi bi-people"></i> Usuarios
     </a>
     {% endif %}
+
   </div>
   <div class="sidebar-footer">
     <div style="font-size:.8rem; color:#8895b3">
@@ -112,11 +151,11 @@
   </div>
 </nav>
 
-<!-- Main content -->
 <div class="main-content">
   <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-      <button class="btn btn-sm btn-outline-secondary d-md-none" onclick="document.getElementById('sidebar').classList.toggle('show')">
+      <button class="btn btn-sm btn-outline-secondary d-md-none"
+              onclick="document.getElementById('sidebar').classList.toggle('show')">
         <i class="bi bi-list"></i>
       </button>
       <h6 class="mb-0 fw-semibold">{% block page_title %}{% endblock %}</h6>
@@ -145,7 +184,6 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
-
     {% block content %}{% endblock %}
   </div>
 </div>

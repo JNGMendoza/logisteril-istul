@@ -9,6 +9,8 @@ from routes.equipos import equipos_bp
 from routes.ciclos import ciclos_bp
 from routes.reportes import reportes_bp
 from routes.usuarios import usuarios_bp
+from routes.adquisiciones import adquisiciones_bp
+from routes.qr import qr_bp
 from utils.context import register_context_processors
 from dotenv import load_dotenv
 import os
@@ -19,7 +21,6 @@ def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'logisteril-istul-2024-secretkey')
 
-    # Render entrega DATABASE_URL como "postgres://..." pero SQLAlchemy necesita "postgresql://"
     database_url = os.environ.get('DATABASE_URL', 'sqlite:///logisteril.db')
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
@@ -45,12 +46,20 @@ def create_app():
     app.register_blueprint(ciclos_bp)
     app.register_blueprint(reportes_bp)
     app.register_blueprint(usuarios_bp)
+    app.register_blueprint(adquisiciones_bp)
+    app.register_blueprint(qr_bp)
 
     register_context_processors(app)
 
-    #with app.app_context():
-    #    init_db()
+    # with app.app_context():
+    #     init_db()
 
+    @app.route("/init-db")
+    def init_db_route():
+        with app.app_context():
+            init_db()
+        return "Database initialized successfully"
+        
     return app
 
 if __name__ == '__main__':

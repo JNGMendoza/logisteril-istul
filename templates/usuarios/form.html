@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-7">
+  <div class="col-md-8">
     <div class="card">
       <div class="card-header">
         <i class="bi bi-person me-1"></i> {{ 'Editar usuario' if usuario else 'Registrar nuevo usuario' }}
@@ -17,7 +17,6 @@
               <label class="form-label fw-semibold">Nombre de usuario *</label>
               <input type="text" name="username" class="form-control" required
                      pattern="[a-zA-Z0-9_]+" title="Solo letras, números y guion bajo">
-              <div class="form-text">Sin espacios ni caracteres especiales.</div>
             </div>
             {% endif %}
             <div class="col-md-6">
@@ -37,7 +36,7 @@
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Rol *</label>
-              <select name="rol" class="form-select">
+              <select name="rol" id="rolSelect" class="form-select" onchange="toggleEstudiante(this.value)">
                 {% for key, display in roles.items() %}
                 <option value="{{ key }}" {{ 'selected' if usuario and usuario.rol == key }}>{{ display }}</option>
                 {% endfor %}
@@ -51,6 +50,40 @@
                      {% if not usuario %}required{% endif %} minlength="8"
                      placeholder="Mínimo 8 caracteres">
             </div>
+
+            <!-- Campos extra para estudiantes -->
+            <div id="camposEstudiante" style="display:none; width:100%">
+              <div class="row g-3 mt-0">
+                <div class="col-12">
+                  <hr class="my-1">
+                  <p class="text-muted mb-2" style="font-size:.85rem">
+                    <i class="bi bi-mortarboard me-1"></i> Datos adicionales del estudiante
+                  </p>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold">Cédula</label>
+                  <input type="text" name="cedula" class="form-control"
+                         value="{{ usuario.cedula if usuario else '' }}" placeholder="1712345678">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold">Código estudiante</label>
+                  <input type="text" name="codigo_estudiante" class="form-control"
+                         value="{{ usuario.codigo_estudiante if usuario else '' }}" placeholder="EST-2024-001">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold">Semestre</label>
+                  <input type="text" name="semestre" class="form-control"
+                         value="{{ usuario.semestre if usuario else '' }}" placeholder="3er semestre">
+                </div>
+                <div class="col-md-8">
+                  <label class="form-label fw-semibold">Carrera</label>
+                  <input type="text" name="carrera" class="form-control"
+                         value="{{ usuario.carrera if usuario else '' }}"
+                         placeholder="Enfermería, Instrumentación Quirúrgica...">
+                </div>
+              </div>
+            </div>
+
             {% if usuario %}
             <div class="col-md-6">
               <label class="form-label fw-semibold">Estado</label>
@@ -61,6 +94,7 @@
               </div>
             </div>
             {% endif %}
+
             <div class="col-12 d-flex gap-2 justify-content-end">
               <a href="{{ url_for('usuarios.index') }}" class="btn btn-outline-secondary">Cancelar</a>
               <button type="submit" class="btn btn-primary">
@@ -73,4 +107,15 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleEstudiante(rol) {
+  const campos = document.getElementById('camposEstudiante');
+  campos.style.display = (rol === 'estudiante') ? 'block' : 'none';
+}
+// Ejecutar al cargar si ya es estudiante
+toggleEstudiante(document.getElementById('rolSelect').value);
+</script>
 {% endblock %}

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Retiro de insumos – LogiSteril</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background: #f0f4f8; font-size: 15px; }
+    .brand { background: #1a2035; color: #fff; padding: 14px 20px;
+             display: flex; align-items: center; gap: 10px; }
+    .brand small { font-size: .75rem; color: #8895b3; display: block; }
+    .card { border: none; border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+    .est-badge { background: #e3f0ff; border-radius: 12px; padding: 14px 16px;
+                 display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; }
+    .est-avatar { width: 46px; height: 46px; border-radius: 50%; background: #0d6efd;
+                  color: #fff; display: flex; align-items: center; justify-content: center;
+                  font-size: 1.1rem; font-weight: 700; flex-shrink: 0; }
+    .btn-submit { background: #0d6efd; color: #fff; border: none; border-radius: 10px;
+                  padding: 14px; font-size: 1rem; font-weight: 600; width: 100%; }
+    .stock-badge { font-size: .72rem; padding: 2px 8px; border-radius: 20px; }
+    select, input, textarea { border-radius: 10px !important; border: 1.5px solid #dee2e6 !important;
+                               padding: 10px 14px !important; font-size: 15px !important; }
+    select:focus, input:focus, textarea:focus {
+      border-color: #0d6efd !important; box-shadow: 0 0 0 3px rgba(13,110,253,.15) !important; }
+    .label-fw { font-weight: 600; font-size: .88rem; margin-bottom: 5px; }
+    {% if error %}.error-box { background:#fff3cd;border-radius:10px;padding:12px 16px;
+      font-size:.88rem;color:#664d03;margin-bottom:1rem; }{% endif %}
+  </style>
+</head>
+<body>
+  <div class="brand">
+    <i class="bi bi-hospital" style="font-size:1.4rem;color:#4d8fcc"></i>
+    <div>
+      <span style="font-weight:700">LogiSteril</span>
+      <small>Central de Esterilización · ISTUL</small>
+    </div>
+  </div>
+
+  <div style="max-width:480px; margin:0 auto; padding:20px 16px 40px">
+
+    <!-- Identificación del estudiante -->
+    <div class="est-badge">
+      <div class="est-avatar">
+        {{ estudiante.nombre[0] }}{{ estudiante.apellido[0] }}
+      </div>
+      <div>
+        <div style="font-weight:700">{{ estudiante.nombre_completo }}</div>
+        <div style="font-size:.8rem; color:#555">
+          {% if estudiante.codigo_estudiante %}{{ estudiante.codigo_estudiante }}{% endif %}
+          {% if estudiante.cedula %} · {{ estudiante.cedula }}{% endif %}
+        </div>
+        <div style="font-size:.78rem; color:#777">
+          {{ estudiante.carrera or '' }}
+          {% if estudiante.semestre %} — {{ estudiante.semestre }}{% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% if error %}
+    <div class="error-box">
+      <i class="bi bi-exclamation-triangle me-1"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-body p-4">
+        <h6 class="fw-bold mb-3">
+          <i class="bi bi-bag-plus me-1 text-primary"></i> Solicitar insumo
+        </h6>
+
+        <form method="POST">
+          <!-- Insumo -->
+          <div class="mb-3">
+            <div class="label-fw">Insumo *</div>
+            <select name="insumo_id" class="form-select" required onchange="mostrarStock(this)">
+              <option value="">— Seleccionar insumo —</option>
+              {% for i in insumos %}
+              <option value="{{ i.id }}"
+                      data-stock="{{ i.stock_actual }}"
+                      data-unidad="{{ i.unidad }}"
+                      data-estado="{{ i.estado_stock }}">
+                {{ i.nombre }}
+              </option>
+              {% endfor %}
+            </select>
+            <div id="stockInfo" style="font-size:.8rem; margin-top:4px; display:none"></div>
+          </div>
+
+          <!-- Cantidad -->
+          <div class="mb-3">
+            <div class="label-fw">Cantidad *</div>
+            <input type="number" name="cantidad" id="cantidad"
+                   step="0.01" min="0.01" required placeholder="0">
+          </div>
+
+          <!-- Área -->
+          <div class="mb-3">
+            <div class="label-fw">Área de práctica *</div>
+            <select name="area_practica" class="form-select" required>
+              <option value="">— Seleccionar área —</option>
+              {% for a in areas %}
+              <option value="{{ a }}">{{ a }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Motivo -->
+          <div class="mb-4">
+            <div class="label-fw">Motivo / Práctica *</div>
+            <input type="text" name="motivo" required
+                   placeholder="Ej: Práctica N°3 — esterilización por vapor">
+          </div>
+
+          <button type="submit" class="btn-submit">
+            <i class="bi bi-check-circle me-2"></i> Confirmar retiro
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <p class="text-center text-muted mt-3" style="font-size:.75rem">
+      <i class="bi bi-shield-check me-1"></i>
+      Este formulario está asociado a tu código QR personal.
+    </p>
+  </div>
+
+<script>
+function mostrarStock(sel) {
+  const opt    = sel.options[sel.selectedIndex];
+  const stock  = parseFloat(opt.dataset.stock || 0);
+  const unidad = opt.dataset.unidad || '';
+  const estado = opt.dataset.estado || '';
+  const info   = document.getElementById('stockInfo');
+  const colores = {
+    sin_stock: ['#f8d7da','#842029'],
+    critico:   ['#f8d7da','#842029'],
+    bajo:      ['#fff3cd','#664d03'],
+    normal:    ['#d1e7dd','#0f5132'],
+  };
+  if (!opt.value) { info.style.display = 'none'; return; }
+  const [bg, color] = colores[estado] || ['#e9ecef','#495057'];
+  info.style.cssText = `display:inline-block;background:${bg};color:${color};
+    padding:3px 10px;border-radius:20px`;
+  info.textContent = `Disponible: ${stock} ${unidad}`;
+  document.getElementById('cantidad').max = stock;
+}
+</script>
+</body>
+</html>

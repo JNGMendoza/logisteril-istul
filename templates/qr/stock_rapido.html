@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock de Insumos – LogiSteril</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background: #f0f4f8; font-size: 14px; }
+    .brand { background: #1a2035; color: #fff; padding: 12px 16px;
+             display: flex; align-items: center; gap: 10px; }
+    .brand small { font-size: .72rem; color: #8895b3; display: block; }
+    .insumo-card { background: #fff; border-radius: 10px; padding: 12px 14px;
+                   margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .prog { height: 6px; border-radius: 3px; background: #e9ecef; overflow: hidden; }
+    .prog-bar { height: 100%; border-radius: 3px; }
+    .badge-estado { font-size: .68rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    input[type=text] { border-radius: 8px; border: 1.5px solid #dee2e6;
+                       padding: 8px 12px; font-size: 14px; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="brand">
+    <i class="bi bi-hospital" style="font-size:1.3rem;color:#4d8fcc"></i>
+    <div>
+      <span style="font-weight:700">LogiSteril · Stock</span>
+      <small>Actualizado: {{ now.strftime('%d/%m/%Y %H:%M') }}</small>
+    </div>
+  </div>
+
+  <div style="max-width:540px; margin:0 auto; padding:16px 12px 40px">
+
+    {% if criticos %}
+    <div style="background:#f8d7da;border-radius:10px;padding:10px 14px;
+                margin-bottom:12px;font-size:.82rem;color:#842029">
+      <i class="bi bi-exclamation-triangle-fill me-1"></i>
+      <strong>{{ criticos|length }}</strong> insumo(s) en nivel crítico o sin stock
+    </div>
+    {% endif %}
+
+    <!-- Buscador -->
+    <div style="margin-bottom:12px">
+      <input type="text" id="buscar" placeholder="Buscar insumo..." oninput="filtrar(this.value)">
+    </div>
+
+    <!-- Resumen -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:#fff;border-radius:10px;padding:10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+        <div style="font-weight:700;font-size:1.2rem">{{ insumos|length }}</div>
+        <div style="font-size:.7rem;color:#777">Total</div>
+      </div>
+      <div style="background:#f8d7da;border-radius:10px;padding:10px;text-align:center">
+        <div style="font-weight:700;font-size:1.2rem;color:#842029">
+          {{ insumos|selectattr('estado_stock','in',['critico','sin_stock'])|list|length }}
+        </div>
+        <div style="font-size:.7rem;color:#842029">Crítico</div>
+      </div>
+      <div style="background:#d1e7dd;border-radius:10px;padding:10px;text-align:center">
+        <div style="font-weight:700;font-size:1.2rem;color:#0f5132">
+          {{ insumos|selectattr('estado_stock','equalto','normal')|list|length }}
+        </div>
+        <div style="font-size:.7rem;color:#0f5132">Normal</div>
+      </div>
+    </div>
+
+    <!-- Lista de insumos -->
+    <div id="listaInsumos">
+    {% for i in insumos %}
+    {% set colores = {'sin_stock': ('#842029','#f8d7da','#dc3545'),
+                      'critico':   ('#842029','#f8d7da','#dc3545'),
+                      'bajo':      ('#664d03','#fff3cd','#ffc107'),
+                      'normal':    ('#0f5132','#d1e7dd','#198754')} %}
+    {% set c = colores.get(i.estado_stock, ('#495057','#e9ecef','#6c757d')) %}
+    <div class="insumo-card" data-nombre="{{ i.nombre|lower }}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-weight:600;font-size:.88rem;flex:1;padding-right:8px">{{ i.nombre }}</div>
+        <span class="badge-estado" style="background:{{ c[1] }};color:{{ c[0] }};white-space:nowrap">
+          {{ i.estado_badge[1] }}
+        </span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:700;font-size:1rem;color:{{ c[0] }}">
+          {{ i.stock_actual }} {{ i.unidad }}
+        </span>
+        <span style="font-size:.75rem;color:#777">
+          Mín: {{ i.stock_minimo }} · Máx: {{ i.stock_maximo }}
+        </span>
+      </div>
+      <div class="prog">
+        {% set pct = [(i.stock_actual / i.stock_maximo * 100)|round|int, 100]|min if i.stock_maximo > 0 else 0 %}
+        <div class="prog-bar" style="width:{{ pct }}%;background:{{ c[2] }}"></div>
+      </div>
+      {% if i.ubicacion %}
+      <div style="font-size:.72rem;color:#999;margin-top:4px">
+        <i class="bi bi-geo-alt"></i> {{ i.ubicacion }}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+    </div>
+
+  </div>
+
+<script>
+function filtrar(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#listaInsumos .insumo-card').forEach(c => {
+    c.style.display = c.dataset.nombre.includes(q) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}QR Todos los Estudiantes – LogiSteril{% endblock %}
+{% block page_title %}Códigos QR — Todos los estudiantes{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <p class="text-muted mb-0">{{ qrs|length }} estudiante(s) activos</p>
+  <button onclick="window.print()" class="btn btn-primary btn-sm">
+    <i class="bi bi-printer me-1"></i> Imprimir todos los QR
+  </button>
+</div>
+
+<div class="row g-3" id="qrGrid">
+  {% for item in qrs %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <div class="card text-center py-3 px-2 h-100">
+      <div style="display:inline-block; padding:8px; background:#fff;
+                  border:1.5px solid #e8eaf0; border-radius:8px; margin:0 auto .75rem">
+        <img src="data:image/png;base64,{{ item.qr_b64 }}"
+             alt="QR {{ item.usuario.nombre_completo }}"
+             style="width:130px;height:130px;display:block">
+      </div>
+      <div class="fw-bold" style="font-size:.85rem">{{ item.usuario.nombre_completo }}</div>
+      <div class="text-muted" style="font-size:.73rem">
+        {{ item.usuario.codigo_estudiante or item.usuario.cedula or '—' }}
+      </div>
+      <div class="text-muted" style="font-size:.72rem">
+        {{ item.usuario.carrera or '' }}
+        {% if item.usuario.semestre %} · {{ item.usuario.semestre }}{% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12 text-center text-muted py-5">
+    No hay estudiantes registrados. <a href="{{ url_for('usuarios.nuevo') }}">Crear uno</a>
+  </div>
+  {% endfor %}
+</div>
+
+<style>
+@media print {
+  .sidebar, .topbar, .d-flex.justify-content-between { display: none !important; }
+  .main-content { margin-left: 0 !important; }
+  .page-content { padding: 0 !important; }
+  #qrGrid .col-6 { width: 25% !important; }
+  .card { break-inside: avoid; border: 1px solid #ccc !important;
+          box-shadow: none !important; margin-bottom: 8px; }
+}
+</style>
+{% endblock %}
